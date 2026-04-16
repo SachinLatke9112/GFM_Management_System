@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Coordinator Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+    .dash-header {
+        border-radius: 16px;
+        animation: fadeUp 0.6s ease;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .table-card {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    table tbody tr {
+        transition: 0.2s;
+    }
+
+    table tbody tr:hover {
+        background-color: #f1f6ff;
+    }
+
+    .action-btn {
+        border-radius: 20px;
+        padding: 4px 12px;
+        transition: 0.2s;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+</style>
+
+<!-- Dashboard Header -->
+<div class="card dash-header shadow-sm p-4 mb-4">
+    <h3 class="fw-bold mb-1">
+        Coordinator Dashboard
+    </h3>
+    <p class="text-muted mb-0">
+        Division: <b>{{ division }}</b>
+    </p>
+</div>
+
+<!-- Student Table -->
+<div class="card table-card shadow-sm p-3">
+
+    <table class="table align-middle table-hover mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th>PRN</th>
+                <th>Name</th>
+                <th>Division</th>
+                <th>Year</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for student in students %}
+            <tr>
+                <td>{{ student.prn }}</td>
+                <td class="fw-semibold">{{ student.name }}</td>
+                <td>{{ student.division }}</td>
+                <td>{{ student.year }}</td>
+
+                <td class="text-center">
+                    <a href="/coordinator/view/{{ student.id }}"
+                       class="btn btn-sm btn-info action-btn">
+                        👁 View
+                    </a>
+
+                    <form action="/coordinator/delete/{{ student.id }}"
+                          method="POST"
+                          style="display:inline;"
+                          onsubmit="return confirm('Delete this student?');">
+
+                        <button class="btn btn-sm btn-danger action-btn">
+                            🗑 Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% if students|length == 0 %}
+    <div class="alert alert-secondary mt-4 text-center">
+        No students found for this division.
+    </div>
+{% endif %}
+
+{% endblock %}

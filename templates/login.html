@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GFM Login</title>
+</head>
+<body>
+    <h2>GFM Management System Login</h2>
+
+    <form method="post">
+        <label>Login As:</label>
+        <select name="role">
+            <option value="student">Student</option>
+            <option value="coordinator">Coordinator</option>
+        </select>
+        <br><br>
+
+        <label>PRN (Student):</label>
+        <input type="text" name="prn"><br><br>
+
+        <label>Username (Coordinator):</label>
+        <input type="text" name="username"><br><br>
+
+        <label>Password:</label>
+        <input type="password" name="password"><br><br>
+
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>
+<select name="role">
+  <option value="student" {% if request.args.get('role')=='student' %}selected{% endif %}>Student</option>
+  <option value="coordinator" {% if request.args.get('role')=='coordinator' %}selected{% endif %}>Coordinator</option>
+</select>

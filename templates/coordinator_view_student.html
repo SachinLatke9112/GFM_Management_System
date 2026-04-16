@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Student Full Profile{% endblock %}
+
+{% block content %}
+
+<style>
+    .profile-card {
+        border-radius: 18px;
+        animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .profile-img {
+        border-radius: 12px;
+        transition: 0.3s;
+    }
+
+    .profile-img:hover {
+        transform: scale(1.05);
+    }
+
+    table tr:hover {
+        background-color: #f8f9ff;
+    }
+
+    .section-title {
+        font-weight: 600;
+        margin-top: 30px;
+        margin-bottom: 10px;
+    }
+
+    .action-btn {
+        border-radius: 25px;
+        padding: 8px 18px;
+        transition: 0.2s;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="card profile-card shadow-lg p-4">
+
+    <!-- HEADER -->
+    <div class="text-center mb-4">
+        <h3 class="fw-bold">Student GFM Full Profile</h3>
+        <p class="text-muted mb-0">Complete academic & personal details</p>
+    </div>
+
+    <hr>
+
+    <!-- BASIC INFO -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-3 text-center">
+
+            {% if image_base64 %}
+                <img src="data:image/jpeg;base64,{{ image_base64 }}"
+                     class="img-thumbnail profile-img"
+                     width="160">
+            {% elif student.photo %}
+                <img src="/uploads/{{ student.photo }}"
+                     class="img-thumbnail profile-img"
+                     width="160">
+            {% else %}
+                <p class="text-muted">No Photo</p>
+            {% endif %}
+
+        </div>
+
+        <div class="col-md-9">
+            <h5 class="fw-bold mb-2">{{ student.name }}</h5>
+            <p class="mb-1"><b>PRN:</b> {{ student.prn }}</p>
+            <p class="mb-1"><b>Division:</b> {{ student.division }}</p>
+            <p class="mb-0"><b>Year:</b> {{ student.year }}</p>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- PERSONAL INFO -->
+    <h5 class="section-title">👤 Personal Information</h5>
+    <table class="table table-bordered align-middle">
+        <tr><th>Email</th><td>{{ student.email }}</td></tr>
+        <tr><th>Phone</th><td>{{ student.phone }}</td></tr>
+        <tr><th>Gender</th><td>{{ student.gender }}</td></tr>
+        <tr><th>DOB</th><td>{{ student.dob }}</td></tr>
+        <tr><th>Address</th><td>{{ student.address }}</td></tr>
+    </table>
+
+    <hr>
+
+    <!-- ACADEMIC INFO -->
+    <h5 class="section-title">📚 Academic Performance</h5>
+    <table class="table table-striped table-bordered align-middle">
+        <tr><th>SSC</th><td>{{ student.ssc_marks }}</td></tr>
+        <tr><th>HSC</th><td>{{ student.hsc_marks }}</td></tr>
+        <tr><th>FE Sem 1</th><td>{{ student.fe_sem1 }}</td></tr>
+        <tr><th>FE Sem 2</th><td>{{ student.fe_sem2 }}</td></tr>
+        <tr><th>SE Sem 1</th><td>{{ student.se_sem1 }}</td></tr>
+        <tr><th>SE Sem 2</th><td>{{ student.se_sem2 }}</td></tr>
+        <tr><th>TE Sem 1</th><td>{{ student.te_sem1 }}</td></tr>
+        <tr><th>TE Sem 2</th><td>{{ student.te_sem2 }}</td></tr>
+        <tr><th>BE Sem 1</th><td>{{ student.be_sem1 }}</td></tr>
+        <tr><th>BE Sem 2</th><td>{{ student.be_sem2 }}</td></tr>
+    </table>
+
+    {% if not download %}
+    <div class="text-center mt-4">
+        <a href="/coordinator/dashboard"
+           class="btn btn-secondary action-btn me-2">
+            ⬅ Back
+        </a>
+
+        <a href="/coordinator/download/{{ student.id }}"
+           class="btn btn-success action-btn">
+            ⬇ Download Profile
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
