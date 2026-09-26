@@ -1,118 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Coordinator Login | GFM</title>
+{% extends 'base.html' %}
+{% block title %}Coordinator Login{% endblock %}
 
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-75">
+    <div class="col-md-5">
+        <div class="glass-card p-5 animate-fade-up">
 
-    <!-- Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-
-    <style>
-        body {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #eef2f7, #e8f5e9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 420px;
-            border: none;
-            border-radius: 18px;
-            animation: fadeUp 0.7s ease;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(25px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .login-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: #198754;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: white;
-            margin: -60px auto 20px;
-        }
-
-        .form-control {
-            border-radius: 12px;
-        }
-
-        .form-control:focus {
-            box-shadow: none;
-            border-color: #198754;
-        }
-
-        .btn {
-            border-radius: 30px;
-            padding: 10px;
-            transition: 0.3s;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .toggle-password {
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-
-<div class="card login-card shadow p-4">
-
-    <div class="login-icon">
-        <i class="bi bi-person-badge-fill"></i>
-    </div>
-
-    <h4 class="text-center fw-bold mb-3">Coordinator Login</h4>
-    <p class="text-center text-muted mb-4">
-        Access coordinator dashboard
-    </p>
-
-    <form method="POST">
-
-        <div class="mb-3">
-            <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-control" placeholder="Enter username" required>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Password</label>
-            <div class="input-group">
-                <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
-                <span class="input-group-text toggle-password" onclick="togglePassword()">
-                    <i class="bi bi-eye"></i>
-                </span>
+            <div class="text-center mb-4">
+                <div class="d-inline-block bg-success bg-opacity-10 rounded-circle p-4 mb-3">
+                    <i class="bi bi-person-badge-fill text-success" style="font-size: 2.5rem;"></i>
+                </div>
+                <h3 class="fw-bold">Coordinator Login</h3>
+                <p class="text-muted">Welcome back! Please login to your dashboard.</p>
             </div>
+
+            <form method="POST">
+                <div class="mb-4">
+                    <label>Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="bi bi-person-circle"></i>
+                        </span>
+                        <input type="text" name="username" class="form-control border-start-0 ps-0" placeholder="Enter username" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label>Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="bi bi-lock"></i>
+                        </span>
+                        <input type="password" name="password" id="password" class="form-control border-start-0 border-end-0 ps-0" placeholder="Enter password" required>
+                        <span class="input-group-text bg-white cursor-pointer toggle-password" onclick="togglePassword()">
+                            <i class="bi bi-eye text-muted"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <button class="btn-premium w-100 py-2 mb-3" style="background: var(--secondary); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">Login</button>
+            </form>
+
+            <p class="text-center mt-4 mb-0 text-muted">
+                Don't have an account? <a href="/coordinator/register" class="text-success fw-bold text-decoration-none">Register here</a>
+            </p>
+
         </div>
-
-        <button class="btn btn-success w-100 mt-2">
-            Login
-        </button>
-
-    </form>
-
+    </div>
 </div>
 
 <script>
     function togglePassword() {
         const pwd = document.getElementById("password");
-        pwd.type = pwd.type === "password" ? "text" : "password";
+        const icon = document.querySelector(".toggle-password i");
+        if(pwd.type === "password") {
+            pwd.type = "text";
+            icon.classList.remove("bi-eye");
+            icon.classList.add("bi-eye-slash");
+        } else {
+            pwd.type = "password";
+            icon.classList.remove("bi-eye-slash");
+            icon.classList.add("bi-eye");
+        }
     }
 </script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,12 +1,19 @@
-from flask import Blueprint, render_template, request, redirect, session
+from flask import Blueprint, render_template, request, redirect, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, Student, Coordinator
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 import os
 import base64
+import csv
+import io
 from flask import make_response
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def to_float(value):
     try:
@@ -17,46 +24,7 @@ def to_float(value):
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/login', methods=['GET', 'POST'])
-def login():
 
-    if request.method == 'POST':
-        role = request.form['role']
-
-        # ---------------- STUDENT LOGIN ----------------
-        if role == 'student':
-            prn = request.form['prn']
-            password = request.form['password']
-
-            student = Student.query.filter_by(prn=prn).first()
-
-            if not student:
-                return "Student not registered. Please register first."
-
-            if check_password_hash(student.password, password):
-                session.clear()
-                session['user'] = 'student'
-                session['prn'] = prn
-                return redirect('/student/dashboard')
-
-            return "Invalid PRN or Password"
-
-        # ---------------- COORDINATOR LOGIN ----------------
-        elif role == 'coordinator':
-            username = request.form['username']
-            password = request.form['password']
-
-            coordinator = Coordinator.query.filter_by(username=username).first()
-
-            if coordinator and check_password_hash(coordinator.password, password):
-                session.clear()
-                session['user'] = 'coordinator'
-                session['division'] = coordinator.division
-                return redirect('/coordinator/dashboard')
-
-            return "Invalid Coordinator Credentials"
-
-    return render_template('login.html')
 
 
 @auth_bp.route('/student/dashboard')
@@ -77,9 +45,12 @@ def student_dashboard():
 @auth_bp.route('/coordinator/add_student', methods=['POST'])
 def coordinator_add_student():
     if session.get('user') != 'coordinator':
-        return redirect('/login')
+        return redirect('/coordinator/login')
 
     prn = request.form['prn']
+
+    if '@' in prn or len(prn) < 5:
+        return "Invalid PRN format. Please enter a valid PRN."
 
     if Student.query.filter_by(prn=prn).first():
         return "Student already exists"
@@ -98,7 +69,7 @@ def coordinator_add_student():
 @auth_bp.route('/coordinator/view', methods=['POST'])
 def view_student():
     if session.get('user') != 'coordinator':
-        return redirect('/login')
+        return redirect('/coordinator/login')
 
     prn = request.form['prn']
     division = session['division']
@@ -118,14 +89,24 @@ def student_register():
         prn = request.form['prn']
         password = request.form['password']
 
-        if Student.query.filter_by(prn=prn).first():
-            return "Student already registered. Please login."
+        if '@' in prn or len(prn) < 5:
+            flash("Invalid PRN format. Please enter a valid PRN.", "error")
+            return redirect('/student/register')
 
-        student = Student(
-            prn=prn,
-            password=generate_password_hash(password)
-        )
-        db.session.add(student)
+        student = Student.query.filter_by(prn=prn).first()
+        if student:
+            if student.password:
+                flash("Student already registered. Please login.", "warning")
+                return redirect('/student/login')
+            else:
+                student.password = generate_password_hash(password)
+        else:
+            student = Student(
+                prn=prn,
+                password=generate_password_hash(password)
+            )
+            db.session.add(student)
+            
         db.session.commit()
 
         session['user'] = 'student'
@@ -145,7 +126,8 @@ def student_login():
         student = Student.query.filter_by(prn=prn).first()
 
         if not student:
-            return "Student not registered"
+            flash("Student not registered", "error")
+            return redirect('/student/login')
 
         if check_password_hash(student.password, password):
             session.clear()
@@ -158,7 +140,8 @@ def student_login():
             else:
                 return redirect('/student/dashboard')
 
-        return "Invalid credentials"
+        flash("Invalid credentials", "error")
+        return redirect('/student/login')
 
     return render_template('student_login.html')
 
@@ -190,7 +173,8 @@ def coordinator_login():
         coordinator = Coordinator.query.filter_by(username=username).first()
 
         if not coordinator:
-            return "Coordinator not registered"
+            flash("Coordinator not registered", "error")
+            return redirect('/coordinator/login')
 
         if check_password_hash(coordinator.password, password):
             session.clear()
@@ -198,7 +182,8 @@ def coordinator_login():
             session['division'] = coordinator.division
             return redirect('/coordinator/dashboard')
 
-        return "Invalid credentials"
+        flash("Invalid credentials", "error")
+        return redirect('/coordinator/login')
 
     return render_template('coordinator_login.html')
 
@@ -217,14 +202,14 @@ def gfm_form():
 
     if request.method == 'POST':
         # TEXT DATA
-        student.name = request.form['name']
-        student.email = request.form['email']
-        student.phone = request.form['phone']
-        student.gender = request.form['gender']
-        student.dob = request.form['dob']
-        student.address = request.form['address']
-        student.division = request.form['division']
-        student.year = request.form['year']
+        student.name = request.form.get('name', '')
+        student.email = request.form.get('email', '')
+        student.phone = request.form.get('phone', '')
+        student.gender = request.form.get('gender', '')
+        student.dob = request.form.get('dob', '')
+        student.address = request.form.get('address', '')
+        student.division = request.form.get('division', '')
+        student.year = request.form.get('year', '')
 
         student.ssc_marks = to_float(request.form.get('ssc_marks'))
         student.hsc_marks = to_float(request.form.get('hsc_marks'))
@@ -244,11 +229,14 @@ def gfm_form():
 
 
         # 📸 PHOTO UPLOAD
-        photo = request.files['photo']
-        if photo:
-            filename = secure_filename(session['prn'] + "_" + photo.filename)
-            photo.save(os.path.join('uploads', filename))
-            student.photo = filename
+        photo = request.files.get('photo')
+        if photo and photo.filename != '':
+            if allowed_file(photo.filename):
+                filename = secure_filename(session['prn'] + "_" + photo.filename)
+                photo.save(os.path.join('uploads', filename))
+                student.photo = filename
+            else:
+                return "Invalid file type. Only PNG, JPG, JPEG, GIF are allowed.", 400
 
         db.session.commit()
         return redirect('/student/dashboard')
@@ -266,10 +254,21 @@ def coordinator_dashboard():
 
     students = Student.query.filter_by(division=division).all()
 
+    total_students = len(students)
+    completed_profiles = sum(1 for s in students if s.name)
+    male_count = sum(1 for s in students if s.gender == 'Male')
+    female_count = sum(1 for s in students if s.gender == 'Female')
+
     return render_template(
         'coordinator_dashboard.html',
         students=students,
-        division=division
+        division=division,
+        stats={
+            'total': total_students,
+            'completed': completed_profiles,
+            'male': male_count,
+            'female': female_count
+        }
     )
 
 
@@ -283,6 +282,9 @@ def coordinator_view_student(student_id):
 
     if not student:
         return "Student not found"
+        
+    if student.division != session.get('division'):
+        return "Unauthorized access to this student", 403
 
     return render_template(
         'coordinator_view_student.html',
@@ -299,7 +301,8 @@ def coordinator_register():
         division = request.form['division']
 
         if Coordinator.query.filter_by(username=username).first():
-            return "Coordinator already exists"
+            flash("Coordinator already exists", "error")
+            return redirect('/coordinator/register')
 
         coordinator = Coordinator(
             username=username,
@@ -326,14 +329,14 @@ def student_edit():
         return "Student not found"
 
     if request.method == 'POST':
-        student.name = request.form['name']
-        student.email = request.form['email']
-        student.phone = request.form['phone']
-        student.gender = request.form['gender']
-        student.dob = request.form['dob']
-        student.address = request.form['address']
-        student.division = request.form['division']
-        student.year = request.form['year']
+        student.name = request.form.get('name', '')
+        student.email = request.form.get('email', '')
+        student.phone = request.form.get('phone', '')
+        student.gender = request.form.get('gender', '')
+        student.dob = request.form.get('dob', '')
+        student.address = request.form.get('address', '')
+        student.division = request.form.get('division', '')
+        student.year = request.form.get('year', '')
 
         student.ssc_marks = to_float(request.form.get('ssc_marks'))
         student.hsc_marks = to_float(request.form.get('hsc_marks'))
@@ -350,6 +353,15 @@ def student_edit():
         student.be_sem1 = to_float(request.form.get('be_sem1'))
         student.be_sem2 = to_float(request.form.get('be_sem2'))
 
+        # 📸 PHOTO UPLOAD
+        photo = request.files.get('photo')
+        if photo and photo.filename != '':
+            if allowed_file(photo.filename):
+                filename = secure_filename(session['prn'] + "_" + photo.filename)
+                photo.save(os.path.join('uploads', filename))
+                student.photo = filename
+            else:
+                return "Invalid file type. Only PNG, JPG, JPEG, GIF are allowed.", 400
 
         db.session.commit()
         return redirect('/student/dashboard')
@@ -365,6 +377,10 @@ def delete_student(id):
         return redirect('/coordinator/login')
 
     student = Student.query.get_or_404(id)
+    
+    if student.division != session.get('division'):
+        return "Unauthorized access to this student", 403
+
     db.session.delete(student)
     db.session.commit()
 
@@ -382,6 +398,9 @@ def download_student_profile(student_id):
 
     if not student:
         return "Student not found"
+        
+    if student.division != session.get('division'):
+        return "Unauthorized access to this student", 403
 
     image_base64 = None
     if student.photo:
@@ -405,8 +424,13 @@ def download_student_profile(student_id):
 
 def image_to_base64(filename):
     path = os.path.join('uploads', filename)
-    with open(path, 'rb') as img:
-        return base64.b64encode(img.read()).decode('utf-8')
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, 'rb') as img:
+            return base64.b64encode(img.read()).decode('utf-8')
+    except Exception:
+        return None
 
 
 
@@ -414,3 +438,31 @@ def image_to_base64(filename):
 def logout():
     session.clear()
     return redirect('/')
+
+@auth_bp.route('/coordinator/export')
+def export_students():
+    if session.get('user') != 'coordinator':
+        return redirect('/coordinator/login')
+
+    division = session.get('division')
+    students = Student.query.filter_by(division=division).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow([
+        'PRN', 'Name', 'Email', 'Phone', 'Gender', 'DOB', 'Division', 'Year', 'Address', 
+        'SSC %', 'HSC %', 'FE Sem1', 'FE Sem2', 'SE Sem1', 'SE Sem2', 'TE Sem1', 'TE Sem2', 'BE Sem1', 'BE Sem2'
+    ])
+    
+    for s in students:
+        writer.writerow([
+            s.prn, s.name, s.email, s.phone, s.gender, s.dob, s.division, s.year, s.address,
+            s.ssc_marks, s.hsc_marks, s.fe_sem1, s.fe_sem2, s.se_sem1, s.se_sem2, s.te_sem1, s.te_sem2, s.be_sem1, s.be_sem2
+        ])
+    
+    from flask import Response
+    response = Response(output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = f'attachment; filename=Division_{division}_Students.csv'
+    return response
+

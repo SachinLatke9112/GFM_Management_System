@@ -1,73 +1,56 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Student Dashboard{% endblock %}
 
 {% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="glass-card shadow-lg p-5">
+            <div class="row align-items-center">
+                <!-- Profile Image -->
+                <div class="col-md-4 text-center mb-4 mb-md-0 position-relative">
+                    {% if student.photo %}
+                        <img src="/uploads/{{ student.photo }}" alt="Student Photo" class="rounded-circle shadow-md" style="width: 180px; height: 180px; object-fit: cover; border: 5px solid white;">
+                    {% else %}
+                        <div class="rounded-circle shadow-md d-flex align-items-center justify-content-center bg-primary text-white mx-auto" style="width: 180px; height: 180px; border: 5px solid white; font-size: 4rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    {% endif %}
+                </div>
 
-<style>
-    .dashboard-card {
-        border-radius: 18px;
-        animation: fadeUp 0.6s ease;
-    }
+                <!-- Student Info -->
+                <div class="col-md-8">
+                    <h2 class="fw-bold text-primary mb-1">{{ student.name if student.name else "Profile Incomplete" }}</h2>
+                    <p class="text-muted fs-5 mb-4"><i class="bi bi-mortarboard me-2"></i>{{ student.prn }}</p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label class="text-muted small text-uppercase fw-bold">Division</label>
+                            <p class="fw-medium fs-5">{{ student.division if student.division else "-" }}</p>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small text-uppercase fw-bold">Year</label>
+                            <p class="fw-medium fs-5">
+                                {% if student.year == 'SE' %}
+                                    <span class="badge badge-premium badge-se">SE</span>
+                                {% elif student.year == 'TE' %}
+                                    <span class="badge badge-premium badge-te">TE</span>
+                                {% elif student.year == 'BE' %}
+                                    <span class="badge badge-premium badge-be">BE</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
 
-    @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .profile-img {
-        width: 150px;
-        height: 150px;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 4px solid #0d6efd;
-        transition: 0.3s;
-    }
-
-    .profile-img:hover {
-        transform: scale(1.05);
-    }
-
-    .info-box p {
-        margin-bottom: 6px;
-        font-size: 0.95rem;
-    }
-
-    .action-btn {
-        border-radius: 30px;
-        padding: 8px 22px;
-        transition: 0.3s;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-2px);
-    }
-</style>
-
-<div class="card dashboard-card shadow p-4">
-
-    <div class="row align-items-center">
-        <!-- Profile Image -->
-        <div class="col-md-3 text-center mb-3 mb-md-0">
-            <img src="/uploads/{{ student.photo }}" class="profile-img" alt="Student Photo">
-        </div>
-
-        <!-- Student Info -->
-        <div class="col-md-9 info-box">
-            <h4 class="fw-bold mb-2">{{ student.name }}</h4>
-            <p><b>PRN:</b> {{ student.prn }}</p>
-            <p><b>Division:</b> {{ student.division }}</p>
-
-            <div class="mt-3 d-flex gap-2 flex-wrap">
-                <a href="/student/edit" class="btn btn-info action-btn">
-                    ✏️ Edit GFM Data
-                </a>
-                <a href="/logout" class="btn btn-secondary action-btn">
-                    🔒 Logout
-                </a>
+                    <div class="d-flex gap-3 mt-2">
+                        <a href="/student/edit" class="btn-premium">
+                            <i class="bi bi-pencil-square me-2"></i> Edit GFM Data
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
 </div>
-
 {% endblock %}
